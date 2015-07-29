@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="OutputWindow" Height="304.478" Width="380.597">
     <Grid>
-        <RichTextBox x:Name="OutputTextBox" HorizontalAlignment="Left" Height="200" Margin="10,63,0,0" VerticalAlignment="Top" Width="353"/>
+        <TextBox x:Name="OutputTextBox" HorizontalAlignment="Left" Height="200" Margin="10,63,0,0" VerticalAlignment="Top" Width="353"/>
         <Label Content="Publishing Details" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Height="48" Width="211" FontSize="20" FontWeight="Bold"/>
     </Grid>
 </Window>

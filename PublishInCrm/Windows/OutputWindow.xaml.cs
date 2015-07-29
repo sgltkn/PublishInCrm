@@ -22,20 +22,7 @@ namespace CemYabansu.PublishInCrm
 
         private void AddNewLine(string text, bool isErrorMessage)
         {
-            var paragraph = new Paragraph();
-            OutputTextBox.Document = new FlowDocument(paragraph);
-            if (isErrorMessage)
-            {
-                paragraph.Inlines.Add(new Run(text)
-                {
-                    Foreground = Brushes.Red
-                });
-            }
-            else
-            {
-                paragraph.Inlines.Add(text);
-            }
-            paragraph.Inlines.Add(new LineBreak());
+            OutputTextBox.AppendText(text + System.Environment.NewLine);
         }
     }
 }
