@@ -8,3 +8,4 @@
 
 #wishes
 - [ ] add an option for get all webresources from organization 
+- [ ] add an option for changing credentials with an interface
