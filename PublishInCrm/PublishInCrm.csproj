@@ -132,12 +132,12 @@
     </COMReference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CreateWebResourceWindow.xaml.cs">
+    <Compile Include="Windows\CreateWebResourceWindow.xaml.cs">
       <DependentUpon>CreateWebResourceWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Guids.cs" />
     <Compile Include="CrmSdkTypes.cs" />
-    <Compile Include="OutputWindow.xaml.cs">
+    <Compile Include="Windows\OutputWindow.xaml.cs">
       <DependentUpon>OutputWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Resources.Designer.cs">
@@ -149,7 +149,7 @@
     <Compile Include="PublishInCrmPackage.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PkgCmdID.cs" />
-    <Compile Include="UserCredential.xaml.cs">
+    <Compile Include="Windows\UserCredential.xaml.cs">
       <DependentUpon>UserCredential.xaml</DependentUpon>
     </Compile>
   </ItemGroup>
@@ -184,15 +184,15 @@
     <Content Include="Resources\Package.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Page Include="CreateWebResourceWindow.xaml">
+    <Page Include="Windows\CreateWebResourceWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="OutputWindow.xaml">
+    <Page Include="Windows\OutputWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="UserCredential.xaml">
+    <Page Include="Windows\UserCredential.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
