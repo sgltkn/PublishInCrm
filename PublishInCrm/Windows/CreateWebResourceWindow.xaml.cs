@@ -4,7 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Xrm.Sdk;
 
-namespace CemYabansu.PublishInCrm
+namespace CemYabansu.PublishInCrm.Windows
 {
     public partial class CreateWebResourceWindow
     {

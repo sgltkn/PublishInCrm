@@ -1,4 +1,4 @@
-﻿<Window x:Class="CemYabansu.PublishInCrm.OutputWindow"
+﻿<Window x:Class="CemYabansu.PublishInCrm.Windows.OutputWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="OutputWindow" Height="304.478" Width="380.597">

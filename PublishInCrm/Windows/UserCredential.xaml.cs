@@ -5,7 +5,7 @@ using Microsoft.Crm.Sdk.Messages;
 using Microsoft.Xrm.Client;
 using Microsoft.Xrm.Client.Services;
 
-namespace CemYabansu.PublishInCrm
+namespace CemYabansu.PublishInCrm.Windows
 {
     public partial class UserCredential
     {

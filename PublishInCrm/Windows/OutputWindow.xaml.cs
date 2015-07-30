@@ -1,7 +1,4 @@
-﻿using System.Windows.Documents;
-using System.Windows.Media;
-
-namespace CemYabansu.PublishInCrm
+﻿namespace CemYabansu.PublishInCrm.Windows
 {
     public partial class OutputWindow
     {
