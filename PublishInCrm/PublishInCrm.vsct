@@ -13,6 +13,9 @@
     <Groups>
       <Group guid="guidPublishInCrmCmdSet" id="MyEditorCtxGroup" priority="0x600">
       </Group>
+
+      <Group guid="guidPublishInCrmCmdSet" id="MySolutionGroup" priority="0x600">
+      </Group>
     </Groups>
 
     <Buttons>
@@ -24,11 +27,23 @@
           <ButtonText>Publish In Crm</ButtonText>
         </Strings>
       </Button>
+      <Button guid="guidPublishInCrmCmdSet" id="cmdidPublishInCrmMultiple" priority="0x0100" type="Button">
+        <Parent guid="guidPublishInCrmCmdSet" id="MySolutionGroup" />
+        <!--Will be used later for button visibility.-->
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <Strings>
+          <ButtonText>Publish In Crm</ButtonText>
+        </Strings>
+      </Button>
     </Buttons>
 
   </Commands>
 
   <CommandPlacements>
+    <CommandPlacement guid="guidPublishInCrmCmdSet" id="MySolutionGroup" priority="0x0600">
+      <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_ITEMNODE" />
+    </CommandPlacement>
+    
     <CommandPlacement guid="guidPublishInCrmCmdSet" id="MyEditorCtxGroup" priority="0x0600">
       <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_CODEWIN" />
     </CommandPlacement>
@@ -84,6 +99,8 @@
     <GuidSymbol name="guidPublishInCrmCmdSet" value="{60edb5ab-a9f3-4c04-9352-9057c5463815}">
       <IDSymbol name="MyEditorCtxGroup" value="0x1030" />
       <IDSymbol name="cmdidPublishInCrm" value="0x0100" />
+      <IDSymbol name="MySolutionGroup" value="0x1040" />
+      <IDSymbol name="cmdidPublishInCrmMultiple" value="0x0110" />
     </GuidSymbol>
 
     <GuidSymbol name="HtmlEditorWindowLibra" value="{78F03954-2FB8-4087-8CE7-59D71710B3BB}">

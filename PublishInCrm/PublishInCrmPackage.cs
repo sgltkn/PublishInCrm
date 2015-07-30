@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.InteropServices;
@@ -8,6 +9,8 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Xml;
+using CemYabansu.PublishInCrm.Windows;
+using EnvDTE;
 using EnvDTE80;
 using Microsoft.Crm.Sdk.Messages;
 
@@ -18,6 +21,8 @@ using Microsoft.Xrm.Client.Services;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Messages;
 using Microsoft.Xrm.Sdk.Query;
+using OutputWindow = CemYabansu.PublishInCrm.Windows.OutputWindow;
+using Thread = System.Threading.Thread;
 
 namespace CemYabansu.PublishInCrm
 {
@@ -68,7 +73,185 @@ namespace CemYabansu.PublishInCrm
                 CommandID publishInCrmCommandID = new CommandID(GuidList.guidPublishInCrmCmdSet, (int)PkgCmdIDList.cmdidPublishInCrm);
                 MenuCommand publishInCrmMenuItem = new MenuCommand(PublishInCrmCallback, publishInCrmCommandID);
                 mcs.AddCommand(publishInCrmMenuItem);
+
+                // Create the command for the publish in crm(solution explorer).
+                CommandID publishInCrmMultipleCommandID = new CommandID(GuidList.guidPublishInCrmCmdSet, (int)PkgCmdIDList.cmdidPublishInCrmMultiple);
+                MenuCommand publishInCrmMultipleMenuItem = new MenuCommand(PublishInCrmMultipleCallback, publishInCrmMultipleCommandID);
+                mcs.AddCommand(publishInCrmMultipleMenuItem);
+
             }
+        }
+
+        private void PublishInCrmMultipleCallback(object sender, EventArgs e)
+        {
+            PublishInCrm(true);
+        }
+
+        private List<string> GetSelectedFilesPath(bool isFromSolutionExplorer)
+        {
+            var dte = (DTE2)GetService(typeof(SDTE));
+            var selectedItems = dte.SelectedItems;
+
+            if (isFromSolutionExplorer)
+            {
+                List<string> list = new List<string>();
+                foreach (SelectedItem selItem in selectedItems)
+                    list.Add(selItem.ProjectItem.Document.FullName);
+                return list;
+            }
+
+            return new List<string> { dte.ActiveDocument.FullName };
+        }
+
+        private void PublishInCrm(bool isFromSolutionExplorer)
+        {
+            _outputWindow = new OutputWindow();
+            _outputWindow.Show();
+
+            //getting selected files
+            List<string> selectedFiles = GetSelectedFilesPath(isFromSolutionExplorer);
+
+            //checking selected files extensions 
+            var inValidFiles = CheckFilesExtension(selectedFiles);
+            if (inValidFiles.Count > 0)
+            {
+                AddErrorLineToOutputWindow(string.Format("Error : Invalid file extensions : \n\t- {0}", string.Join("\n\t- ", inValidFiles)));
+                return;
+            }
+
+            //getting connection string
+            var solutionPath = GetSolutionPath();
+            var connectionString = GetConnectionString(solutionPath);
+            if (connectionString == string.Empty)
+            {
+                AddErrorLineToOutputWindow("Error : Connection string is not found.");
+
+                var userCredential = new UserCredential();
+                userCredential.ShowDialog();
+
+                if (string.IsNullOrEmpty(userCredential.ConnectionString))
+                {
+                    AddErrorLineToOutputWindow("Error : Connection failed.");
+                    return;
+                }
+
+                connectionString = userCredential.ConnectionString;
+                WriteConnectionStringToFile(Path.GetFileNameWithoutExtension(solutionPath), connectionString, Path.GetDirectoryName(solutionPath));
+            }
+
+            //updating/creating files one by one
+            var thread = new Thread(o => UpdateWebResources(connectionString, selectedFiles));
+            thread.SetApartmentState(ApartmentState.STA);
+            thread.Start();
+        }
+
+        private void UpdateWebResources(string connectionString, List<string> selectedFiles)
+        {
+            try
+            {
+                List<WebResource> toBePublishedWebResources = new List<WebResource>();
+                OrganizationService orgService;
+                var crmConnection = CrmConnection.Parse(connectionString);
+                //to escape "another assembly" exception
+                crmConnection.ProxyTypesAssembly = Assembly.GetExecutingAssembly();
+                using (orgService = new OrganizationService(crmConnection))
+                {
+                    AddLineToOutputWindow("Connected to : " + crmConnection.ServiceUri);
+                    for (int i = 0; i < selectedFiles.Count; i++)
+                    {
+                        var fileName = Path.GetFileName(selectedFiles[i]);
+                        var choosenWebresource = GetWebresource(orgService, fileName);
+
+                        if (choosenWebresource == null)
+                        {
+                            AddErrorLineToOutputWindow(string.Format("Error : {0} is not exist in CRM.",fileName));
+                            AddLineToOutputWindow("Creating new webresource..");
+
+                            choosenWebresource = CreateWebResource(fileName, orgService, selectedFiles[i]);
+
+                            if (choosenWebresource == null)
+                            {
+                                AddLineToOutputWindow("Creating new webresource is cancelled.");
+                                continue;
+                            }
+
+                            AddLineToOutputWindow(string.Format("{0} is cretead.",fileName));
+                            
+                        }
+                        else
+                        {
+                            AddLineToOutputWindow("Updating to Webresource..");
+                            UpdateWebResource(orgService,choosenWebresource,selectedFiles[i]);
+                            toBePublishedWebResources.Add(choosenWebresource);
+                        }
+                        toBePublishedWebResources.Add(choosenWebresource);
+                    }
+
+                    //publishing webresources
+                    AddLineToOutputWindow("Publishing the webresource..");
+                    PublishWebResources(orgService,toBePublishedWebResources);
+
+                    var webResourcesNames = new string[toBePublishedWebResources.Count];
+                    for (var i = 0; i < toBePublishedWebResources.Count; i++)
+                    {
+                        webResourcesNames[i] = toBePublishedWebResources[i].Name;
+                    }
+                    AddLineToOutputWindow(string.Format("{0} published.", string.Join(",", webResourcesNames)));
+                }
+            }
+            catch (Exception ex)
+            {
+                AddErrorLineToOutputWindow("Error : " + ex.Message);
+            }
+        }
+
+        private void PublishWebResources(OrganizationService orgService, List<WebResource> toBePublishedWebResources)
+        {
+            var webResourcesString = "";
+            foreach (var webResource in toBePublishedWebResources)
+                webResourcesString = webResourcesString + string.Format("<webresource>{0}</webresource>", webResource.Id);
+
+            var prequest = new PublishXmlRequest
+            {
+                ParameterXml = string.Format("<importexportxml><webresources>{0}</webresources></importexportxml>", webResourcesString)
+            };
+            orgService.Execute(prequest);
+        }
+
+        private void UpdateWebResource(OrganizationService orgService, WebResource choosenWebresource, string selectedFile)
+        {
+            choosenWebresource.Content = GetEncodedFileContents(selectedFile);
+            var updateRequest = new UpdateRequest
+            {
+                Target = choosenWebresource
+            };
+            orgService.Execute(updateRequest);
+        }
+
+        private WebResource CreateWebResource(string fileName, OrganizationService orgService , string filePath)
+        {
+            var createWebresoruce = new CreateWebResourceWindow(fileName);
+            createWebresoruce.ShowDialog();
+
+            if (createWebresoruce.CreatedWebResource == null) 
+                return null;
+
+            var createdWebresource = createWebresoruce.CreatedWebResource;
+            createdWebresource.Content = GetEncodedFileContents(filePath);
+            createdWebresource.Id = orgService.Create(createdWebresource);
+            return createdWebresource;
+        }
+
+        private List<string> CheckFilesExtension(List<string> selectedFilePath)
+        {
+            var invalidFiles = new List<string>();
+            for (var i = 0; i < selectedFilePath.Count; i++)
+            {
+                var selectedFileExtension = Path.GetExtension(selectedFilePath[i]);
+                if (_expectedExtensions.All(t => t != selectedFileExtension))
+                    invalidFiles.Add(Path.GetFileName(selectedFilePath[i]));
+            }
+            return invalidFiles;
         }
 
         /// <summary>
@@ -134,7 +317,7 @@ namespace CemYabansu.PublishInCrm
                     var fileName = Path.GetFileName(selectedFilePath);
                     var choosenWebresource = GetWebresource(orgService, fileName);
 
-                    AddLineToOutputWindow("Connected to : " + crmConnection.ServiceUri);
+                    
                     if (choosenWebresource == null)
                     {
                         AddErrorLineToOutputWindow("Error : Selected file is not exist in CRM.");
