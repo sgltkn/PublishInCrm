@@ -55,7 +55,6 @@ namespace CemYabansu.PublishInCrm
         {
         }
 
-
         /// <summary>
         /// Initialization of the package; this method is called right after the package is sited, so this is the place
         /// where you can put all the initialization code that rely on services provided by VisualStudio.
@@ -96,7 +95,9 @@ namespace CemYabansu.PublishInCrm
             {
                 List<string> list = new List<string>();
                 foreach (SelectedItem selItem in selectedItems)
-                    list.Add(selItem.ProjectItem.Document.FullName);
+                {
+                    list.Add(selItem.ProjectItem.FileNames[0]);
+                }
                 return list;
             }
 
@@ -154,6 +155,8 @@ namespace CemYabansu.PublishInCrm
                 var crmConnection = CrmConnection.Parse(connectionString);
                 //to escape "another assembly" exception
                 crmConnection.ProxyTypesAssembly = Assembly.GetExecutingAssembly();
+                Stopwatch stopwatch = new Stopwatch();
+                stopwatch.Start();
                 using (orgService = new OrganizationService(crmConnection))
                 {
                     AddLineToOutputWindow("Connected to : " + crmConnection.ServiceUri);
@@ -175,16 +178,22 @@ namespace CemYabansu.PublishInCrm
                                 continue;
                             }
 
-                            AddLineToOutputWindow(string.Format("{0} is cretead.",fileName));
+                            AddLineToOutputWindow(string.Format("{0} is created.", fileName));
                             
                         }
                         else
                         {
                             AddLineToOutputWindow("Updating to Webresource..");
                             UpdateWebResource(orgService,choosenWebresource,selectedFiles[i]);
-                            toBePublishedWebResources.Add(choosenWebresource);
+                            AddLineToOutputWindow(string.Format("{0} is updated.", choosenWebresource.Name));
                         }
                         toBePublishedWebResources.Add(choosenWebresource);
+                    }
+
+                    if (toBePublishedWebResources.Count < 1)
+                    {
+                        AddLineToOutputWindow("There is no webresource to publish.");
+                        return;
                     }
 
                     //publishing webresources
@@ -196,8 +205,10 @@ namespace CemYabansu.PublishInCrm
                     {
                         webResourcesNames[i] = toBePublishedWebResources[i].Name;
                     }
-                    AddLineToOutputWindow(string.Format("{0} published.", string.Join(",", webResourcesNames)));
+                    AddLineToOutputWindow(string.Format("{0} published.", string.Join(", ", webResourcesNames)));
                 }
+                stopwatch.Stop();
+                AddLineToOutputWindow(string.Format("Time : {0}",stopwatch.Elapsed));
             }
             catch (Exception ex)
             {
